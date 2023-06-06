@@ -15,7 +15,16 @@ enum Command {
 };
 
 class IPlugin {
+public:
+
+
     virtual Command React(std::any msg) = 0;
+
+    virtual ~IPlugin() {}  // 声明为虚析构函数
+public:
+    std::string Name;
+    std::string Version;
+    std::string Author;
 };
 
 #endif //EASYNVR_PLUGIN_H

@@ -3,8 +3,18 @@
 //
 
 #include "EasyNvr.h"
+#include "spdlog/fmt/fmt.h"
+
 
 void EasyNvr::Run() {
-    PluginRTMP &rtmp = PluginRTMP::NewPluginRTMP();
-    rtmp.React("123");
+
+    PluginManager *plgMgr = new PluginManager();
+    const char *pluginFile = "plugin-rtmp.dll";
+    IPlugin *plugin = plgMgr->loadPlugin(pluginFile);
+    if (plugin != nullptr) {
+        SPDLOG_INFO("Loaded plugin ->{}<- successfully. Name: {}, Version: {}, Author: {}.", pluginFile,
+                    Blue(plugin->Name),
+                    plugin->Version, plugin->Author);
+    }
+    delete plgMgr;
 }

@@ -5,22 +5,26 @@
 #ifndef EASYNVR_EASYNVR_H
 #define EASYNVR_EASYNVR_H
 
-#include "plugin-rtmp/src/PluginRTMP.h"
+#include "core/IPlugin.h"
+#include "env.h"
+#include "PluginManager.h"
+
 
 class EasyNvr {
 public:
     static EasyNvr &NewEasyNvr() {
-        static EasyNvr instance;  // åœ¨é¦–æ¬¡è°ƒç”¨æ—¶è¿›è¡Œå®ä¾‹åŒ–ï¼Œä¿è¯åªæœ‰ä¸€ä¸ªå®ä¾‹
+        static EasyNvr instance;  // ÔÚÊ×´Îµ÷ÓÃÊ±½øĞĞÊµÀı»¯£¬±£Ö¤Ö»ÓĞÒ»¸öÊµÀı
+
         return instance;
     }
 
     void Run();
 
 private:
-    EasyNvr() {}  // æ„é€ å‡½æ•°ç§æœ‰åŒ–ï¼Œé˜²æ­¢å¤–éƒ¨å®ä¾‹åŒ–å¯¹è±¡
-    ~EasyNvr() {} // å¯ä»¥é€‰æ‹©å®šä¹‰ç§æœ‰ææ„å‡½æ•°æ¥ç¡®ä¿å¯¹è±¡æ— æ³•é€šè¿‡ delete é”€æ¯
+    EasyNvr() {}  // ¹¹Ôìº¯ÊıË½ÓĞ»¯£¬·ÀÖ¹Íâ²¿ÊµÀı»¯¶ÔÏó
+    ~EasyNvr() {} // ¿ÉÒÔÑ¡Ôñ¶¨ÒåË½ÓĞÎö¹¹º¯ÊıÀ´È·±£¶ÔÏóÎŞ·¨Í¨¹ı delete Ïú»Ù
 
-    // ç¦ç”¨æ‹·è´æ„é€ å‡½æ•°å’Œèµ‹å€¼è¿ç®—ç¬¦ï¼Œä»¥é˜²æ­¢å¤åˆ¶å®ä¾‹
+    // ½ûÓÃ¿½±´¹¹Ôìº¯ÊıºÍ¸³ÖµÔËËã·û£¬ÒÔ·ÀÖ¹¸´ÖÆÊµÀı
     EasyNvr(const EasyNvr &) = delete;
 
     EasyNvr &operator=(const EasyNvr &) = delete;

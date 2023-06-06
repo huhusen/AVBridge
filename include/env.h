@@ -4,8 +4,10 @@
 
 #ifndef EASYNVR_ENV_H
 #define EASYNVR_ENV_H
-#include <spdlog/spdlog.h>
 
+#include <spdlog/spdlog.h>
+#include <iostream>
+#include <map>
 
 #define PRINT_HEX(data, len) \
     do { \
@@ -21,6 +23,12 @@
         std::cout << "Hex value: " << ascii << std::endl; \
         free(ascii); \
     } while (0)
+
+//SetColor
+#define Red(text) ("\033[1;31m" + std::string(text) + "\033[0m")
+#define Green(text) ("\033[1;32m" + std::string(text) + "\033[0m")
+#define Blue(text) ("\033[1;34m" + std::string(text) + "\033[0m")
+
 
 
 

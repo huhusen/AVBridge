@@ -5,6 +5,12 @@
 #include "PluginRTMP.h"
 
 Command PluginRTMP::React(std::any msg) {
-    SPDLOG_INFO("PluginRTMP");
+    SPDLOG_INFO("PluginRTMPÖÐÎÄ");
     return Start;
 }
+
+
+
+
+
+
