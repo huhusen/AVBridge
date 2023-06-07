@@ -9,6 +9,8 @@
 #include "spdlog/fmt/fmt.h"
 #include <iostream>
 #include <map>
+#include "core/Slice.h"
+#include "core/BigEndian.h"
 
 #define PRINT_HEX(data, len) \
     do { \
@@ -29,8 +31,6 @@
 #define Red(text) ("\033[1;31m" + std::string(text) + "\033[0m")
 #define Green(text) ("\033[1;32m" + std::string(text) + "\033[0m")
 #define Blue(text) ("\033[1;34m" + std::string(text) + "\033[0m")
-
-
 
 
 #endif //EASYNVR_ENV_H

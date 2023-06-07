@@ -4,6 +4,10 @@
 
 #include "PluginRTMP.h"
 
+extern "C" __declspec(dllexport) IPlugin *Install() {
+    return new PluginRTMP("rtmp-plugin", "0.0.1", "AVBridge");
+}
+
 Command PluginRTMP::React(std::any msg) {
     SPDLOG_INFO("PluginRTMPÖĞÎÄ");
     return Start;
@@ -27,10 +31,18 @@ void PluginRTMP::HelloHttp() {
 }
 
 void PluginRTMP::TcpServer() {
-
-    this->TcpServ.onMessage = [](const SocketChannelPtr &channel, Buffer *buf) {
+    this->TcpServ.onMessage = [this](const SocketChannelPtr &channel, Buffer *buf) {
         SPDLOG_INFO("len:{}", buf->size());
         PRINT_HEX(buf->data(), buf->size());
+        if (clients.count(channel->peeraddr()) == 0) {
+            SPDLOG_INFO("New Rtmp Connection");
+            this->Handshake(buf->data(), buf->size());
+            clients.insert(channel->peeraddr());
+        } else {
+
+
+        }
+
     };
     this->TcpServ.onConnection = [](const SocketChannelPtr &channel) {
         std::string peerAddr = channel->peeraddr();

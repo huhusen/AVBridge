@@ -9,13 +9,14 @@ AVBridge::~AVBridge() {
     for (const auto &tcpServer: this->pluginTcpServers) {
         tcpServer.second->stop();
     }
+    delete pluginManager;
 }
 
 void AVBridge::Run() {
     this->ServeHttp();
-    PluginManager *pluginManager = new PluginManager();
+    this->pluginManager = new PluginManager();
     const char *pluginFile = "plugin-rtmp.dll";
-    IPlugin *plugin = pluginManager->LoadPlugin(pluginFile);
+    IPlugin *plugin = this->pluginManager->LoadPlugin(pluginFile);
     if (plugin != nullptr) {
         SPDLOG_INFO("Loaded plugin '{}' successfully. Name: {}, Version: {}, Author: {}", Blue(pluginFile),
                     Blue(plugin->Name), plugin->Version, plugin->Author);
@@ -34,7 +35,7 @@ void AVBridge::Run() {
         }
     }
 
-    delete pluginManager;
+
 }
 
 void AVBridge::ServeHttp() {
