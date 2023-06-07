@@ -1,17 +1,21 @@
-#include <iostream>
-//#include "env.h"
-//#include "hv/TcpServer.h"
+
 #include "EasyNvr.h"
 
+//#include <string>
+//#include "hv/TcpServer.h"
+//#include "env.h"
+//#include "iostream"
 //using namespace hv;
-//using namespace std;
-
 int main() {
+    EasyNvr *nvr = new EasyNvr();
+    nvr->Run();
 
-    EasyNvr &nvr = EasyNvr::NewEasyNvr();
-    nvr.Run();
+//    IPlugin::Tcp t;
+//    TcpServer srv;
+//    nvr->servTcp(t, &srv);
 
 //
+////
 //    TcpServer srv;
 //    int rtmpPort = 1935;
 //    int rtmpFd = srv.createsocket(rtmpPort);
@@ -20,7 +24,7 @@ int main() {
 //    }
 //    SPDLOG_INFO("RTMP Server listen on port {} ", rtmpPort);
 //    srv.onConnection = [](const SocketChannelPtr &channel) {
-//        string peerAddr = channel->peeraddr();
+//        std::string peerAddr = channel->peeraddr();
 //        if (channel->isConnected()) {
 //            SPDLOG_INFO("{} connected! connfd={}", peerAddr.c_str(), channel->fd());
 //        } else {
@@ -28,10 +32,10 @@ int main() {
 //        }
 //    };
 //    srv.onMessage = [](const SocketChannelPtr &channel, Buffer *buf) {
-//        SPDLOG_INFO("len:{}",buf->size());
-//        PRINT_HEX(buf->data(),buf->size());
+//        SPDLOG_INFO("len:{}", buf->size());
+//        PRINT_HEX(buf->data(), buf->size());
 //    };
 //    srv.start();
-//    while (getchar() != '\n');
+    while (getchar() != '\n') {};
     return 0;
 }

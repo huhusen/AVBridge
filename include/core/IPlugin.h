@@ -5,8 +5,12 @@
 #ifndef EASYNVR_PLUGIN_H
 #define EASYNVR_PLUGIN_H
 
+#include "hv/HttpServer.h"
+#include "hv/TcpServer.h"
 #include <iostream>
 #include <any>
+
+using namespace hv;
 
 enum Command {
     Start,     // 0
@@ -14,17 +18,34 @@ enum Command {
     Stop,     // 2
 };
 
+typedef std::function<int(HttpRequest *, HttpResponse *)> HttpFunc;
+typedef std::map<std::string, HttpFunc> HTTPMethod;
+
+typedef std::function<void(const SocketChannelPtr &)> TcpOnConnection;
+
+typedef std::function<void(const SocketChannelPtr &, Buffer *)> TcpOnMessage;
+
+
 class IPlugin {
 public:
 
 
     virtual Command React(std::any msg) = 0;
 
-    virtual ~IPlugin() {}  // å£°æ˜ä¸ºè™šææ„å‡½æ•°
+
+    virtual ~IPlugin() {}  // ÉùÃ÷ÎªĞéÎö¹¹º¯Êı
 public:
-    std::string Name;
-    std::string Version;
-    std::string Author;
+    struct Tcp {
+        TcpOnConnection onConnection;
+        TcpOnMessage onMessage;
+        int port;
+    };
+    std::string Name = "Name";
+    std::string Version = "Version";
+    std::string Author = "Author";
+    HTTPMethod PluginHTTPMethod;
+    Tcp TcpServ;
+
 };
 
 #endif //EASYNVR_PLUGIN_H

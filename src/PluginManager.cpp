@@ -1,10 +1,10 @@
-//
-// Created by uma on 2023/6/6.
-//
+// File: PluginManager.cpp
+// Author: uma
+// Date: 2023/6/6
 
 #include "PluginManager.h"
 
-IPlugin *PluginManager::loadPlugin(const std::string &pluginFileName) {
+IPlugin *PluginManager::LoadPlugin(const std::string &pluginFileName) {
     // 加载插件
 #ifdef _WIN32
     void *pluginHandle = LoadLibrary(pluginFileName.c_str());
@@ -16,7 +16,7 @@ IPlugin *PluginManager::loadPlugin(const std::string &pluginFileName) {
 #ifdef _WIN32
         SPDLOG_ERROR(Red("Failed to load the plugin ->{}<-."), pluginFileName);
 #else
-        SPDLOG_ERROR("加载插件失败 {}",dlerror());
+        SPDLOG_ERROR("加载插件失败: {}", dlerror());
 #endif
         return nullptr;
     }
@@ -41,13 +41,14 @@ IPlugin *PluginManager::loadPlugin(const std::string &pluginFileName) {
 #endif
         return nullptr;
     }
+
     // 创建插件对象并保存到列表中
     IPlugin *plugin = install();
     plugins[plugin->Name] = {pluginHandle, plugin};
     return plugin;
 }
 
-void PluginManager::unloadPlugin(const std::string &pluginName) {
+void PluginManager::UnloadPlugin(const std::string &pluginName) {
     auto it = plugins.find(pluginName);
     if (it != plugins.end()) {
         if (it->second.plugin != nullptr) {
@@ -60,14 +61,13 @@ void PluginManager::unloadPlugin(const std::string &pluginName) {
 #else
         dlclose(it->second.pluginHandle);
 #endif
-
         plugins.erase(it);
     } else {
         SPDLOG_CRITICAL("未找到指定插件或插件已卸载");
     }
 }
 
-IPlugin *PluginManager::getPluginByName(const std::string &pluginName) {
+IPlugin *PluginManager::GetPluginByName(const std::string &pluginName) {
     auto it = plugins.find(pluginName);
     if (it != plugins.end()) {
         return it->second.plugin;

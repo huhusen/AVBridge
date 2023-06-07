@@ -1,18 +1,18 @@
-//
-// Created by uma on 2023/6/6.
-//
+// File: PluginManager.h
+// Author: uma
+// Date: 2023/6/6
 
 #ifndef EASYNVR_PLUGINMANAGER_H
 #define EASYNVR_PLUGINMANAGER_H
 
-
 #ifdef _WIN32
-
-#include <windows.h>
-
+// #include <windows.h>
 #else
 #include <dlfcn.h>
 #endif
+
+#include <map>
+#include <string>
 
 #include "core/IPlugin.h"
 #include "env.h"
@@ -22,26 +22,16 @@ public:
     PluginManager() {}
 
     ~PluginManager() {
-        unloadAllPlugins();
+        UnloadAllPlugins();
     }
 
+    IPlugin *LoadPlugin(const std::string &pluginFileName);
 
-    IPlugin *loadPlugin(const std::string &pluginFileName);
+    void UnloadPlugin(const std::string &pluginName);
 
-    void unloadPlugin(const std::string &pluginName);
-
-    IPlugin *getPluginByName(const std::string &pluginName);
+    IPlugin *GetPluginByName(const std::string &pluginName);
 
 private:
-
-//    PluginManager() : plugins() {}
-
-
-
-    // 禁用拷贝构造函数和赋值运算符，以防止复制实例
-
-
-
     struct PluginData {
         void *pluginHandle;
         IPlugin *plugin;
@@ -50,12 +40,11 @@ private:
 
     std::map<std::string, PluginData> plugins;
 
-    void unloadAllPlugins() {
+    void UnloadAllPlugins() {
         for (const auto &pluginData: plugins) {
             if (pluginData.second.plugin != nullptr) {
                 delete pluginData.second.plugin;
             }
-
             // 卸载插件
 #ifdef _WIN32
             FreeLibrary(static_cast<HMODULE>(pluginData.second.pluginHandle));
@@ -66,5 +55,4 @@ private:
     }
 };
 
-
-#endif //EASYNVR_PLUGINMANAGER_H
+#endif // EASYNVR_PLUGINMANAGER_H

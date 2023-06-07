@@ -6,6 +6,7 @@
 #define EASYNVR_ENV_H
 
 #include <spdlog/spdlog.h>
+#include "spdlog/fmt/fmt.h"
 #include <iostream>
 #include <map>
 
