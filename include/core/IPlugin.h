@@ -29,11 +29,10 @@ typedef std::function<void(const SocketChannelPtr &, Buffer *)> TcpOnMessage;
 class IPlugin {
 public:
 
-
     virtual Command React(std::any msg) = 0;
 
+    virtual ~IPlugin() {}
 
-    virtual ~IPlugin() {}  // 声明为虚析构函数
 public:
     struct Tcp {
         TcpOnConnection onConnection;
