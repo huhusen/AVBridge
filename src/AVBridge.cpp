@@ -2,15 +2,15 @@
 // Author: uma
 // Date: 2023/6/5
 
-#include "EasyNvr.h"
+#include "AVBridge.h"
 
-void EasyNvr::Run() {
+void AVBridge::Run() {
     this->ServeHttp();
     PluginManager *pluginManager = new PluginManager();
     const char *pluginFile = "plugin-rtmp.dll";
     IPlugin *plugin = pluginManager->LoadPlugin(pluginFile);
     if (plugin != nullptr) {
-        SPDLOG_INFO("Loaded plugin '{}' successfully. Name: {}, Version: {}, Author: {}.", Blue(pluginFile),
+        SPDLOG_INFO("Loaded plugin '{}' successfully. Name: {}, Version: {}, Author: {}", Blue(pluginFile),
                     Blue(plugin->Name), plugin->Version, plugin->Author);
 
         if (!plugin->PluginHTTPMethod.empty()) {
@@ -31,7 +31,7 @@ void EasyNvr::Run() {
     delete pluginManager;
 }
 
-void EasyNvr::ServeHttp() {
+void AVBridge::ServeHttp() {
 
     this->server.registerHttpService(&this->router);
     this->server.setPort(8080);
@@ -45,7 +45,7 @@ void EasyNvr::ServeHttp() {
     }
 }
 
-void EasyNvr::ServeTcp(IPlugin *plugin, TcpServer *srv) {
+void AVBridge::ServeTcp(IPlugin *plugin, TcpServer *srv) {
     int fd = srv->createsocket(plugin->TcpServ.port);
     if (fd < 0) {
         SPDLOG_ERROR(Red("Failed to start the {} TcpServer on port {}."), plugin->Name, plugin->TcpServ.port);

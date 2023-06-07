@@ -2,8 +2,8 @@
 // Author: uma
 // Date: 2023/6/6
 
-#ifndef EASYNVR_PLUGINMANAGER_H
-#define EASYNVR_PLUGINMANAGER_H
+#ifndef AVBridge_PLUGINMANAGER_H
+#define AVBridge_PLUGINMANAGER_H
 
 #ifdef _WIN32
 // #include <windows.h>
@@ -55,4 +55,4 @@ private:
     }
 };
 
-#endif // EASYNVR_PLUGINMANAGER_H
+#endif // AVBridge_PLUGINMANAGER_H

@@ -1,16 +1,16 @@
-// File: EasyNvr.h
+// File: AVBridge.h
 // Author: uma
 // Date: 2023/6/5
 
-#ifndef EASYNVR_EASYNVR_H
-#define EASYNVR_EASYNVR_H
+#ifndef AVBridge_AVBridge_H
+#define AVBridge_AVBridge_H
 
 #include "PluginManager.h"
 
-class EasyNvr {
+class AVBridge {
 public:
-    EasyNvr() {}  // 构造函数私有化，防止外部实例化对象
-    ~EasyNvr() {
+    AVBridge() {}  // 构造函数私有化，防止外部实例化对象
+    ~AVBridge() {
         SPDLOG_INFO("123");
     } // 可以选择定义私有析构函数来确保对象无法通过 delete 销毁
 
@@ -26,4 +26,4 @@ private:
     std::map<std::string, TcpServer *> pluginTcpServers;
 };
 
-#endif // EASYNVR_EASYNVR_H
+#endif // AVBridge_AVBridge_H
