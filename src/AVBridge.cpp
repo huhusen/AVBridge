@@ -4,6 +4,13 @@
 
 #include "AVBridge.h"
 
+AVBridge::~AVBridge() {
+    this->server.stop();
+    for (const auto &tcpServer: this->pluginTcpServers) {
+        tcpServer.second->stop();
+    }
+}
+
 void AVBridge::Run() {
     this->ServeHttp();
     PluginManager *pluginManager = new PluginManager();
@@ -20,7 +27,6 @@ void AVBridge::Run() {
                 this->router.Any(path.c_str(), httpMethod.second);
             }
         }
-
         if (plugin->TcpServ.onConnection && plugin->TcpServ.onMessage) {
             TcpServer *srv = new TcpServer();
             this->ServeTcp(plugin, srv);

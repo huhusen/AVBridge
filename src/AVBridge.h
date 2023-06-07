@@ -10,9 +10,7 @@
 class AVBridge {
 public:
     AVBridge() {}  // 构造函数私有化，防止外部实例化对象
-    ~AVBridge() {
-        SPDLOG_INFO("123");
-    } // 可以选择定义私有析构函数来确保对象无法通过 delete 销毁
+    ~AVBridge();// 可以选择定义私有析构函数来确保对象无法通过 delete 销毁
 
     void Run();
 
