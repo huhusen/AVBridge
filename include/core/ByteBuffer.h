@@ -30,11 +30,17 @@ public:
     ByteBuffer(const std::vector<uint8_t> &data, Endian endian = Endian::Big)
             : endian_(endian), buffer_(data), position_(0) {}
 
+
+    ByteBuffer(uint32_t size,Endian endian = Endian::Big) : endian_(endian), position_(0) {
+        buffer_.resize(size);
+    }
+
     ByteBuffer(void *buf, uint32_t size, Endian endian = Endian::Big)
             : endian_(endian), position_(0) {
         buffer_.resize(size);
         std::memcpy(buffer_.data(), buf, size);
     }
+
 
     ~ByteBuffer() {
         clear();
@@ -42,6 +48,9 @@ public:
 
     void reset() {
         clear();
+    }
+    void setEndian(Endian endian ){
+        this->endian_=endian;
     }
 
     std::vector<uint8_t> getBuffer() const {

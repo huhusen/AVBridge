@@ -3,6 +3,7 @@
 //
 
 
+#include <random>
 #include "HandShake.h"
 #include "core/Crypto.h"
 
@@ -69,10 +70,78 @@ RTMPException SimpleHandShake::execute(ByteBuffer C1) {
 
 RTMPException ComplexHandShake::execute(ByteBuffer C1) {
     const ClientSchemeInfo &clientSchemeInfo = validateClient(C1);
-    if (clientSchemeInfo.error != "") {
-        return RTMPException(clientSchemeInfo.error.data());
+    if (!clientSchemeInfo.ok) {
+        return RTMPException("Client scheme error");
     }
+
+    ByteBuffer S1(create_S1());
+
+    int S1_Digest_Offset = scheme_Digest_Offset(S1.getBuffer(), clientSchemeInfo.scheme);
+    const std::vector<uint8_t> &S1_Part1 = S1.getRange(0, S1_Digest_Offset);
+    const std::vector<uint8_t> &S1_Part2 = S1.getRange(S1_Digest_Offset + C1S1_DIGEST_DATA_SIZE, S1.getSize());
+    ByteBuffer S1_Part1_Part2(S1_Part1.size() + S1_Part2.size());
+    S1_Part1_Part2.putBytes(S1_Part1.data(), S1_Part1.size());
+    S1_Part1_Part2.putBytes(S1_Part2.data(), S1_Part2.size());
+    SLICE_RANGE(key, FP_KEY, 0, 36);
+    std::vector<uint8_t> tmp_Hash = Crypto::HmacSha256::Calculate(S1_Part1_Part2.getBuffer(), key.Vector());
+    S1.putBytes(tmp_Hash.data(), tmp_Hash.size(), S1_Digest_Offset);
+
+    ByteBuffer S2_Random(create_S2());
+
+    SLICE_RANGE(key2, FMS_KEY, 0, 68);
+
+    tmp_Hash = Crypto::HmacSha256::Calculate(clientSchemeInfo.digest, key2.Vector());
+
+
+    const std::vector<uint8_t> &S2_Digest = Crypto::HmacSha256::Calculate(S2_Random.getBuffer(), tmp_Hash);
+
+    std::vector<std::vector<uint8_t>> buffer = {
+            {RTMP_HANDSHAKE_VERSION},
+            S1.getBuffer(),
+            S2_Random.getBuffer(),
+            S2_Digest
+    };
+
+
     return RTMPException("");
+}
+
+int ComplexHandShake::scheme_Digest_Offset(const std::vector<uint8_t> &C1S1, int scheme) {
+    if (scheme == 0) {
+        return scheme0_Digest_Offset(C1S1);
+    } else if (scheme == 1) {
+        return scheme1_Digest_Offset(C1S1);
+    }
+    return -1;
+}
+
+std::vector<uint8_t> ComplexHandShake::create_S1() {
+    std::vector<uint8_t> s1_Time(4, 0);
+    std::vector<uint8_t> s1_Version(4, 1);
+    std::vector<uint8_t> s1_key_Digest(1536 - 8);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 255);
+    for (auto &byte: s1_key_Digest) {
+        byte = static_cast<uint8_t>(dis(gen));
+    }
+    std::vector<uint8_t> result;
+    result.reserve(s1_Time.size() + s1_Version.size() + s1_key_Digest.size());
+    result.insert(result.end(), s1_Time.begin(), s1_Time.end());
+    result.insert(result.end(), s1_Version.begin(), s1_Version.end());
+    result.insert(result.end(), s1_key_Digest.begin(), s1_key_Digest.end());
+    return result;
+}
+
+std::vector<uint8_t> ComplexHandShake::create_S2() {
+    std::vector<uint8_t> s2_Random(1536 - 32);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 255);
+    for (auto &byte: s2_Random) {
+        byte = static_cast<uint8_t>(dis(gen));
+    }
+    return s2_Random;
 }
 
 
@@ -85,7 +154,6 @@ ComplexHandShake::ClientSchemeInfo ComplexHandShake::validateClient(ByteBuffer C
     if (clientSchemeInfo.ok) {
         return clientSchemeInfo;
     }
-    clientSchemeInfo.error = "Client scheme error";
     return clientSchemeInfo;
 }
 

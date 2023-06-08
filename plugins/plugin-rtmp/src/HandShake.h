@@ -28,7 +28,6 @@ public:
         std::vector<uint8_t> challenge;
         std::vector<uint8_t> digest;
         bool ok;
-        std::string error;
     };
 
 
@@ -47,6 +46,12 @@ public:
     int scheme1_Digest_Offset(std::vector<uint8_t> C1S1);
 
     int scheme1_Key_Offset(std::vector<uint8_t> C1S1);
+
+    std::vector<uint8_t> create_S1();
+    std::vector<uint8_t> create_S2();
+
+    int scheme_Digest_Offset(const std::vector<uint8_t> &C1S1, int scheme);
+
 
     ~ComplexHandShake() {};
 };
