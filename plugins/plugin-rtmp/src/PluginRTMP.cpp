@@ -51,6 +51,6 @@ void PluginRTMP::TcpServer() {
             SPDLOG_INFO("{} disconnected! connfd={}", peerAddr.c_str(), channel->fd());
         }
     };
-    this->TcpServ.port = 1935;
+    this->TcpServ.port = 1936;
 }
 

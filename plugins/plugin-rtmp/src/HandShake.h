@@ -13,7 +13,7 @@
 
 class SimpleHandShake {
 public:
-    SimpleHandShake(){};
+    SimpleHandShake() {};
 
     RTMPException execute(std::vector<uint8_t> C1);
 
@@ -28,12 +28,15 @@ public:
         std::vector<uint8_t> challenge;
         std::vector<uint8_t> digest;
         bool ok;
+        std::string error;
     };
 
 
-    ComplexHandShake(){};
+    ComplexHandShake() {};
 
     RTMPException execute(std::vector<uint8_t> C1);
+
+    ClientSchemeInfo validateClient(std::vector<uint8_t> C1);
 
     ClientSchemeInfo clientScheme(std::vector<uint8_t> C1, int scheme);
 
@@ -50,7 +53,7 @@ public:
 
 class Handshake {
 public:
-    Handshake(){};
+    Handshake() {};
 
     ~Handshake() {};
 

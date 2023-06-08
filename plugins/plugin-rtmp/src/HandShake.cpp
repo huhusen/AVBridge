@@ -4,7 +4,7 @@
 
 
 #include "HandShake.h"
-#include "core/Hmac_sha256.hpp"
+#include "core/Crypto.h"
 
 enum {
     RTMP_HANDSHAKE_VERSION = 0x03,
@@ -68,11 +68,25 @@ RTMPException SimpleHandShake::execute(std::vector<uint8_t> C1) {
 
 
 RTMPException ComplexHandShake::execute(std::vector<uint8_t> C1) {
-    const ClientSchemeInfo &clientSchemeInfo = clientScheme(C1, 1);
-    if (clientSchemeInfo.ok) {
-        SPDLOG_INFO("");
+    const ClientSchemeInfo &clientSchemeInfo = validateClient(C1);
+    if (clientSchemeInfo.error != "") {
+        return RTMPException(clientSchemeInfo.error.data());
     }
-    return nullptr;
+    return RTMPException("");
+}
+
+
+ComplexHandShake::ClientSchemeInfo ComplexHandShake::validateClient(std::vector<uint8_t> C1) {
+    ClientSchemeInfo clientSchemeInfo = clientScheme(C1, 1);
+    if (clientSchemeInfo.ok) {
+        return clientSchemeInfo;
+    }
+    clientSchemeInfo = clientScheme(C1, 0);
+    if (clientSchemeInfo.ok) {
+        return clientSchemeInfo;
+    }
+    clientSchemeInfo.error = "Client scheme error";
+    return clientSchemeInfo;
 }
 
 ComplexHandShake::ClientSchemeInfo ComplexHandShake::clientScheme(std::vector<uint8_t> C1, int scheme) {
@@ -94,11 +108,11 @@ ComplexHandShake::ClientSchemeInfo ComplexHandShake::clientScheme(std::vector<ui
     c1_Part1_Part2.insert(c1_Part1_Part2.end(), tempc1_Part1.begin(), tempc1_Part1.end());
     c1_Part1_Part2.insert(c1_Part1_Part2.end(), tempc1_Part2.begin(), tempc1_Part2.end());
 
-    HMAC hmac;
     SLICE_RANGE(key, FP_KEY, 0, 30);
-    uint8_t *tmp_Hash = hmac.hash(c1_Part1_Part2.data(), c1_Part1_Part2.size(), key.Vector().data(), key.size());
+    std::vector<uint8_t> tmp_Hash = Crypto::HmacSha256::Calculate(c1_Part1_Part2, key.Vector());
+
     bool ok = false;
-    if (std::memcmp(digest.Vector().data(), tmp_Hash, digest.size()) == 0) {
+    if (std::memcmp(digest.Vector().data(), tmp_Hash.data(), digest.size()) == 0) {
         ok = true;
     }
     SLICE_RANGE(challenge, C1, key_offset, key_offset + C1S1_KEY_DATA_SIZE);
