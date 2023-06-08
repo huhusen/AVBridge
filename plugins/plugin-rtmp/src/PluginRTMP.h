@@ -6,10 +6,8 @@
 #define AVBridge_PLUGINRTMP_H
 
 #include "core/IPlugin.h"
-#include "env.h"
 #include <set>
-#include <shared_mutex>
-#include "Exception.h"
+#include "HandShake.h"
 
 
 class __declspec(dllexport) PluginRTMP : public IPlugin {
@@ -27,11 +25,12 @@ private:
 
     void TcpServer();
 
-    RTMPException *Handshake(void *buf, size_t len);
 
 private:
     std::set<std::string> clients;
-    std::shared_mutex mtx;
+    Handshake handshake;
 };
-
+extern "C" __declspec(dllexport) IPlugin *Install() {
+    return new PluginRTMP("rtmp-plugin", "0.0.1", "AVBridge");
+}
 #endif //AVBridge_PLUGINRTMP_H

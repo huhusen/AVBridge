@@ -15,7 +15,7 @@
 #include <string>
 
 #include "core/IPlugin.h"
-#include "env.h"
+#include "AVBridgeEnv.h"
 
 class PluginManager {
 public:

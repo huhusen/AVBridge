@@ -4,9 +4,6 @@
 
 #include "PluginRTMP.h"
 
-extern "C" __declspec(dllexport) IPlugin *Install() {
-    return new PluginRTMP("rtmp-plugin", "0.0.1", "AVBridge");
-}
 
 Command PluginRTMP::React(std::any msg) {
     SPDLOG_INFO("PluginRTMPÖĞÎÄ");
@@ -36,7 +33,9 @@ void PluginRTMP::TcpServer() {
         PRINT_HEX(buf->data(), buf->size());
         if (clients.count(channel->peeraddr()) == 0) {
             SPDLOG_INFO("New Rtmp Connection");
-            this->Handshake(buf->data(), buf->size());
+//            this->Handshake(buf->data(), buf->size());
+
+            this->handshake.execute(buf->data(), buf->size());
             clients.insert(channel->peeraddr());
         } else {
 
