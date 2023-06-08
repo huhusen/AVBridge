@@ -24,6 +24,5 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_executable(${root} ${sources})
 add_subdirectory(plugins/plugin-rtmp)
-#add_subdirectory(3rds/fmt EXCLUDE_FROM_ALL)
 #链接第三方库
 target_link_libraries(${root} PRIVATE ${LIBNAMES})
