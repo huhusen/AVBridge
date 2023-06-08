@@ -11,7 +11,8 @@
 #include <map>
 #include "core/Slice.h"
 #include "core/BigEndian.h"
-
+#include "core/ByteBuffer.h"
+//Print Data 2 Hex
 #define PRINT_HEX(data, len) \
     do { \
         char hex[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'}; \

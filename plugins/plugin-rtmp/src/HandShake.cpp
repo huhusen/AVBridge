@@ -44,30 +44,30 @@ const std::vector<uint8_t> FP_KEY = {
 }; // 62
 RTMPException Handshake::execute(void *buf, size_t len) {
 
-    uint8_t *uint8Ptr = static_cast<uint8_t *>(buf);
-    std::vector<uint8_t> bytes(uint8Ptr, uint8Ptr + len);
-    if (bytes[0] != RTMP_HANDSHAKE_VERSION) {
+    ByteBuffer byteBuffer(buf, len);
+    if (byteBuffer.get() != RTMP_HANDSHAKE_VERSION) {
         return RTMPException("C0 Error");
     }
-    SLICE_START(C1, bytes, 1);
-    if (C1.size() != C1S1_SIZE) {
+    ByteBuffer C1Buffer(byteBuffer.getRange(1, byteBuffer.getSize()));
+    if (C1Buffer.getSize() != C1S1_SIZE) {
         return RTMPException("C1 Error");
     }
-    SLICE_RANGE(tsbs, C1.Vector(), 4, 8);
-    uint32_t ts = BigEndian::GetIntValue(tsbs.Vector());
+
+
+    auto ts = C1Buffer.getInt(4);;
     if (ts == 0) {
-        return this->simpleHandShake.execute(C1.Vector());
+        return this->simpleHandShake.execute(C1Buffer);
     }
-    return this->complexHandShake.execute(C1.Vector());
+    return this->complexHandShake.execute(C1Buffer);
 }
 
 
-RTMPException SimpleHandShake::execute(std::vector<uint8_t> C1) {
+RTMPException SimpleHandShake::execute(ByteBuffer C1) {
     return nullptr;
 }
 
 
-RTMPException ComplexHandShake::execute(std::vector<uint8_t> C1) {
+RTMPException ComplexHandShake::execute(ByteBuffer C1) {
     const ClientSchemeInfo &clientSchemeInfo = validateClient(C1);
     if (clientSchemeInfo.error != "") {
         return RTMPException(clientSchemeInfo.error.data());
@@ -76,7 +76,7 @@ RTMPException ComplexHandShake::execute(std::vector<uint8_t> C1) {
 }
 
 
-ComplexHandShake::ClientSchemeInfo ComplexHandShake::validateClient(std::vector<uint8_t> C1) {
+ComplexHandShake::ClientSchemeInfo ComplexHandShake::validateClient(ByteBuffer C1) {
     ClientSchemeInfo clientSchemeInfo = clientScheme(C1, 1);
     if (clientSchemeInfo.ok) {
         return clientSchemeInfo;
@@ -89,34 +89,35 @@ ComplexHandShake::ClientSchemeInfo ComplexHandShake::validateClient(std::vector<
     return clientSchemeInfo;
 }
 
-ComplexHandShake::ClientSchemeInfo ComplexHandShake::clientScheme(std::vector<uint8_t> C1, int scheme) {
+ComplexHandShake::ClientSchemeInfo ComplexHandShake::clientScheme(ByteBuffer C1, int scheme) {
     int digest_offset = -1;
     int key_offset = -1;
     if (scheme == 0) {
-        digest_offset = scheme0_Digest_Offset(C1);
-        key_offset = scheme0_Key_Offset(C1);
+        digest_offset = scheme0_Digest_Offset(C1.getBuffer());
+        key_offset = scheme0_Key_Offset(C1.getBuffer());
     } else if (scheme == 1) {
-        digest_offset = scheme1_Digest_Offset(C1);
-        key_offset = scheme1_Key_Offset(C1);
+        digest_offset = scheme1_Digest_Offset(C1.getBuffer());
+        key_offset = scheme1_Key_Offset(C1.getBuffer());
     }
-    SLICE_RANGE(c1_Part1, C1, 0, digest_offset);
-    SLICE_START(c1_Part2, C1, digest_offset + C1S1_DIGEST_DATA_SIZE);
-    SLICE_RANGE(digest, C1, digest_offset, digest_offset + C1S1_DIGEST_DATA_SIZE);
+    const std::vector<uint8_t> &c1_Part1 = C1.getRange(0, digest_offset);
+    const std::vector<uint8_t> &c1_Part2 = C1.getRange(digest_offset + C1S1_DIGEST_DATA_SIZE, C1.getSize());
+    const std::vector<uint8_t> &digest = C1.getRange(digest_offset, digest_offset + C1S1_DIGEST_DATA_SIZE);
+
     std::vector<uint8_t> c1_Part1_Part2;
-    const std::vector<uint8_t> &tempc1_Part1 = c1_Part1.Vector();
-    const std::vector<uint8_t> &tempc1_Part2 = c1_Part2.Vector();
-    c1_Part1_Part2.insert(c1_Part1_Part2.end(), tempc1_Part1.begin(), tempc1_Part1.end());
-    c1_Part1_Part2.insert(c1_Part1_Part2.end(), tempc1_Part2.begin(), tempc1_Part2.end());
+
+    c1_Part1_Part2.insert(c1_Part1_Part2.end(), c1_Part1.begin(), c1_Part1.end());
+    c1_Part1_Part2.insert(c1_Part1_Part2.end(), c1_Part2.begin(), c1_Part2.end());
 
     SLICE_RANGE(key, FP_KEY, 0, 30);
     std::vector<uint8_t> tmp_Hash = Crypto::HmacSha256::Calculate(c1_Part1_Part2, key.Vector());
 
     bool ok = false;
-    if (std::memcmp(digest.Vector().data(), tmp_Hash.data(), digest.size()) == 0) {
+    if (std::memcmp(digest.data(), tmp_Hash.data(), digest.size()) == 0) {
         ok = true;
     }
-    SLICE_RANGE(challenge, C1, key_offset, key_offset + C1S1_KEY_DATA_SIZE);
-    return {scheme, challenge.Vector(), digest.Vector(), ok};
+    const std::vector<uint8_t> &challenge = C1.getRange(key_offset, key_offset + C1S1_KEY_DATA_SIZE);
+
+    return {scheme, challenge, digest, ok};
 
 }
 

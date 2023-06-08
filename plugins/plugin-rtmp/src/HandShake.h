@@ -15,7 +15,7 @@ class SimpleHandShake {
 public:
     SimpleHandShake() {};
 
-    RTMPException execute(std::vector<uint8_t> C1);
+    RTMPException execute(ByteBuffer C1);
 
     ~SimpleHandShake() {};
 };
@@ -34,11 +34,11 @@ public:
 
     ComplexHandShake() {};
 
-    RTMPException execute(std::vector<uint8_t> C1);
+    RTMPException execute(ByteBuffer C1);
 
-    ClientSchemeInfo validateClient(std::vector<uint8_t> C1);
+    ClientSchemeInfo validateClient(ByteBuffer C1);
 
-    ClientSchemeInfo clientScheme(std::vector<uint8_t> C1, int scheme);
+    ClientSchemeInfo clientScheme(ByteBuffer C1, int scheme);
 
     int scheme0_Digest_Offset(std::vector<uint8_t> C1S1);
 

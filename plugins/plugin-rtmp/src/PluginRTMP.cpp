@@ -33,8 +33,6 @@ void PluginRTMP::TcpServer() {
         PRINT_HEX(buf->data(), buf->size());
         if (clients.count(channel->peeraddr()) == 0) {
             SPDLOG_INFO("New Rtmp Connection");
-//            this->Handshake(buf->data(), buf->size());
-
             this->handshake.execute(buf->data(), buf->size());
             clients.insert(channel->peeraddr());
         } else {
