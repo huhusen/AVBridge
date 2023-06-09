@@ -12,9 +12,8 @@ class RTMPException {
 public:
     RTMPException(const char *message) : errorMessage(message) {}
 
-
-private:
     std::string errorMessage;
+
 };
 
 #endif //AVBRIDGE_EXCEPTION_H

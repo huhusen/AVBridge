@@ -29,11 +29,12 @@ void PluginRTMP::HelloHttp() {
 
 void PluginRTMP::TcpServer() {
     this->TcpServ.onMessage = [this](const SocketChannelPtr &channel, Buffer *buf) {
+
         SPDLOG_INFO("len:{}", buf->size());
         PRINT_HEX(buf->data(), buf->size());
         if (clients.count(channel->peeraddr()) == 0) {
             SPDLOG_INFO("New Rtmp Connection");
-            this->handshake.execute(buf->data(), buf->size());
+            this->handshake.execute(channel, buf);
             clients.insert(channel->peeraddr());
         } else {
 

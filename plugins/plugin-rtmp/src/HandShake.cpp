@@ -43,9 +43,9 @@ const std::vector<uint8_t> FP_KEY = {
         0x6E, 0xEC, 0x5D, 0x2D, 0x29, 0x80, 0x6F, 0xAB,
         0x93, 0xB8, 0xE6, 0x36, 0xCF, 0xEB, 0x31, 0xAE
 }; // 62
-RTMPException Handshake::execute(void *buf, size_t len) {
+RTMPException Handshake::execute(const hv::SocketChannelPtr &channel, hv::Buffer *buf) {
 
-    ByteBuffer byteBuffer(buf, len);
+    ByteBuffer byteBuffer(buf->data(), buf->size());
     if (byteBuffer.get() != RTMP_HANDSHAKE_VERSION) {
         return RTMPException("C0 Error");
     }
@@ -57,18 +57,18 @@ RTMPException Handshake::execute(void *buf, size_t len) {
 
     auto ts = C1Buffer.getInt(4);;
     if (ts == 0) {
-        return this->simpleHandShake.execute(C1Buffer);
+        return this->simpleHandShake.execute(C1Buffer, channel);
     }
-    return this->complexHandShake.execute(C1Buffer);
+    return this->complexHandShake.execute(C1Buffer, channel);
 }
 
 
-RTMPException SimpleHandShake::execute(ByteBuffer C1) {
+RTMPException SimpleHandShake::execute(ByteBuffer C1, const hv::SocketChannelPtr &channel) {
     return nullptr;
 }
 
 
-RTMPException ComplexHandShake::execute(ByteBuffer C1) {
+RTMPException ComplexHandShake::execute(ByteBuffer C1, const hv::SocketChannelPtr &channel) {
     const ClientSchemeInfo &clientSchemeInfo = validateClient(C1);
     if (!clientSchemeInfo.ok) {
         return RTMPException("Client scheme error");
@@ -94,14 +94,12 @@ RTMPException ComplexHandShake::execute(ByteBuffer C1) {
 
 
     const std::vector<uint8_t> &S2_Digest = Crypto::HmacSha256::Calculate(S2_Random.getBuffer(), tmp_Hash);
-
-    std::vector<std::vector<uint8_t>> buffer = {
-            {RTMP_HANDSHAKE_VERSION},
-            S1.getBuffer(),
-            S2_Random.getBuffer(),
-            S2_Digest
-    };
-
+    ByteBuffer receive((1 + S1.getSize() + S2_Random.getSize() + S2_Digest.size()),ByteBuffer::Endian::Big);
+    receive.put(RTMP_HANDSHAKE_VERSION);
+    receive.putBytes(S1.getBuffer().data(), S1.getSize());
+    receive.putBytes(S2_Random.getBuffer().data(), S2_Random.getSize());
+    receive.putBytes(S2_Digest.data(), S2_Digest.size());
+    channel->write(receive.getBuffer().data(), receive.getSize());
 
     return RTMPException("");
 }
