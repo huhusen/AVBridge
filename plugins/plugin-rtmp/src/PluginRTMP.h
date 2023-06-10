@@ -8,7 +8,7 @@
 #include "core/IPlugin.h"
 #include <set>
 #include "HandShake.h"
-
+#include "RTMPClient.h"
 
 class __declspec(dllexport) PluginRTMP : public IPlugin {
 public:

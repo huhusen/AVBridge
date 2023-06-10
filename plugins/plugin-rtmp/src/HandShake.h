@@ -10,12 +10,13 @@
 #include "Exception.h"
 #include "AVBridgeEnv.h"
 #include "hv/TcpServer.h"
+#include "RTMP.h"
 
 class SimpleHandShake {
 public:
     SimpleHandShake() {};
 
-    RTMPException execute(ByteBuffer C1, const hv::SocketChannelPtr &channel);
+    RTMPException execute(ByteBuffer C1, ByteBuffer &out);
 
     ~SimpleHandShake() {};
 };
@@ -33,11 +34,11 @@ public:
 
     ComplexHandShake() {};
 
-    RTMPException execute(ByteBuffer C1, const hv::SocketChannelPtr &channel);
+    RTMPException execute(ByteBuffer &C1, ByteBuffer &out);
 
-    ClientSchemeInfo validateClient(ByteBuffer C1);
+    ClientSchemeInfo validateClient(ByteBuffer &C1);
 
-    ClientSchemeInfo clientScheme(ByteBuffer C1, int scheme);
+    ClientSchemeInfo clientScheme(ByteBuffer &C1, int scheme);
 
     int scheme0_Digest_Offset(std::vector<uint8_t> C1S1);
 
@@ -63,7 +64,7 @@ public:
 
     ~Handshake() {};
 
-    RTMPException execute(const hv::SocketChannelPtr &channel, hv::Buffer *buf);
+    RTMPException execute(ByteBuffer &msg, ByteBuffer &out);
 
     SimpleHandShake simpleHandShake;
     ComplexHandShake complexHandShake;

@@ -7,20 +7,7 @@
 #include "HandShake.h"
 #include "core/Crypto.h"
 
-enum {
-    RTMP_HANDSHAKE_VERSION = 0x03,
-    C1S1_SIZE = 1536,
-    C1S1_DIGEST_OFFSET_MAX = 764 - 32 - 4,
-    C1S1_TIME_SIZE = 4,
-    C1S1_VERSION_SIZE = 4,
-    C1S1_DIGEST_OFFSET_SIZE = 4,
-    C1S1_KEY_OFFSET_MAX = 764 - 128 - 4,
-    C1S1_DIGEST_SIZE = 764,
-    C1S1_KEY_SIZE = 764,
-    C1S1_DIGEST_DATA_SIZE = 32,
-    C1S1_KEY_DATA_SIZE = 128
 
-};
 const std::vector<uint8_t> FMS_KEY = {
         0x47, 0x65, 0x6e, 0x75, 0x69, 0x6e, 0x65, 0x20,
         0x41, 0x64, 0x6f, 0x62, 0x65, 0x20, 0x46, 0x6c,
@@ -43,13 +30,13 @@ const std::vector<uint8_t> FP_KEY = {
         0x6E, 0xEC, 0x5D, 0x2D, 0x29, 0x80, 0x6F, 0xAB,
         0x93, 0xB8, 0xE6, 0x36, 0xCF, 0xEB, 0x31, 0xAE
 }; // 62
-RTMPException Handshake::execute(const hv::SocketChannelPtr &channel, hv::Buffer *buf) {
+RTMPException Handshake::execute(ByteBuffer &msg, ByteBuffer &out) {
 
-    ByteBuffer byteBuffer(buf->data(), buf->size());
-    if (byteBuffer.get() != RTMP_HANDSHAKE_VERSION) {
+
+    if (msg.get() != RTMP_HANDSHAKE_VERSION) {
         return RTMPException("C0 Error");
     }
-    ByteBuffer C1Buffer(byteBuffer.getRange(1, byteBuffer.getSize()));
+    ByteBuffer C1Buffer(msg.getRange(1, msg.getSize()));
     if (C1Buffer.getSize() != C1S1_SIZE) {
         return RTMPException("C1 Error");
     }
@@ -57,18 +44,18 @@ RTMPException Handshake::execute(const hv::SocketChannelPtr &channel, hv::Buffer
 
     auto ts = C1Buffer.getInt(4);;
     if (ts == 0) {
-        return this->simpleHandShake.execute(C1Buffer, channel);
+        return this->simpleHandShake.execute(C1Buffer, out);
     }
-    return this->complexHandShake.execute(C1Buffer, channel);
+    return this->complexHandShake.execute(C1Buffer, out);
 }
 
 
-RTMPException SimpleHandShake::execute(ByteBuffer C1, const hv::SocketChannelPtr &channel) {
+RTMPException SimpleHandShake::execute(ByteBuffer C1, ByteBuffer &out) {
     return nullptr;
 }
 
 
-RTMPException ComplexHandShake::execute(ByteBuffer C1, const hv::SocketChannelPtr &channel) {
+RTMPException ComplexHandShake::execute(ByteBuffer &C1, ByteBuffer &out) {
     const ClientSchemeInfo &clientSchemeInfo = validateClient(C1);
     if (!clientSchemeInfo.ok) {
         return RTMPException("Client scheme error");
@@ -94,12 +81,13 @@ RTMPException ComplexHandShake::execute(ByteBuffer C1, const hv::SocketChannelPt
 
 
     const std::vector<uint8_t> &S2_Digest = Crypto::HmacSha256::Calculate(S2_Random.getBuffer(), tmp_Hash);
-    ByteBuffer receive((1 + S1.getSize() + S2_Random.getSize() + S2_Digest.size()),ByteBuffer::Endian::Big);
-    receive.put(RTMP_HANDSHAKE_VERSION);
-    receive.putBytes(S1.getBuffer().data(), S1.getSize());
-    receive.putBytes(S2_Random.getBuffer().data(), S2_Random.getSize());
-    receive.putBytes(S2_Digest.data(), S2_Digest.size());
-    channel->write(receive.getBuffer().data(), receive.getSize());
+
+    out.resize((1 + S1.getSize() + S2_Random.getSize() + S2_Digest.size()));
+
+    out.put(RTMP_HANDSHAKE_VERSION);
+    out.putBytes(S1.getBuffer().data(), S1.getSize());
+    out.putBytes(S2_Random.getBuffer().data(), S2_Random.getSize());
+    out.putBytes(S2_Digest.data(), S2_Digest.size());
 
     return RTMPException("");
 }
@@ -143,7 +131,7 @@ std::vector<uint8_t> ComplexHandShake::create_S2() {
 }
 
 
-ComplexHandShake::ClientSchemeInfo ComplexHandShake::validateClient(ByteBuffer C1) {
+ComplexHandShake::ClientSchemeInfo ComplexHandShake::validateClient(ByteBuffer &C1) {
     ClientSchemeInfo clientSchemeInfo = clientScheme(C1, 1);
     if (clientSchemeInfo.ok) {
         return clientSchemeInfo;
@@ -155,7 +143,7 @@ ComplexHandShake::ClientSchemeInfo ComplexHandShake::validateClient(ByteBuffer C
     return clientSchemeInfo;
 }
 
-ComplexHandShake::ClientSchemeInfo ComplexHandShake::clientScheme(ByteBuffer C1, int scheme) {
+ComplexHandShake::ClientSchemeInfo ComplexHandShake::clientScheme(ByteBuffer &C1, int scheme) {
     int digest_offset = -1;
     int key_offset = -1;
     if (scheme == 0) {
