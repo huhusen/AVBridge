@@ -45,7 +45,7 @@ void RTMPClient::readChunk() {
     uint32_t ChunkStreamID = head & 0x3f;
     uint8_t ChunkType = head >> 6;
     ChunkStreamID = this->readChunkStreamID(ChunkStreamID);
-    ChunkHeader &h = rtmpHeader[ChunkStreamID];
+    ChunkHeader h;
     if (rtmpHeader.count(ChunkStreamID) == 0) {
         ChunkHeader chunkHeader;
         ChunkBasicHeader chunkBasicHeader;
@@ -54,19 +54,76 @@ void RTMPClient::readChunk() {
         chunkHeader.basicHeader = chunkBasicHeader;
         this->rtmpHeader[ChunkStreamID] = chunkHeader;
         h = chunkHeader;
+    } else {
+        h = rtmpHeader[ChunkStreamID];
     }
+    bool ok = incompleteRtmpBody.count(ChunkStreamID) != 0;
     ByteBuffer currentBody = incompleteRtmpBody[ChunkStreamID];
-    if (ChunkType != 3 && currentBody.getSize() > 0) {
+    if (ChunkType != 3 && ok && currentBody.getSize() > 0) {
         SPDLOG_ERROR("incompleteRtmpBody error");
         return;
     }
-
+    this->readChunkType(h, ChunkType);
 
     uint32_t msgLen = h.messageHeader.messageLength;
+    if (!ok) {
 
-    SPDLOG_INFO("");
+        currentBody.resize(msgLen);
+        incompleteRtmpBody[ChunkStreamID] = currentBody;
+    }
+    int needRead = this->readChunkSize;
+
+    int unRead = msgLen - currentBody.getPosition();
+    if (unRead < needRead) {
+        needRead = unRead;
+    }
+    std::vector<uint8_t> _currentBody(needRead);
+    this->inMsg->getBytes(_currentBody.data(), _currentBody.size());
+    currentBody.putBytes(_currentBody.data(),_currentBody.size());
+    this->readSeqNum += currentBody.getSize();
+    if (currentBody.getPosition() == msgLen) {
+
+    }
+
 
 }
+
+void RTMPClient::readChunkType(ChunkHeader &h, uint8_t chunkType) {
+    std::vector<uint8_t> b(3);
+    if (chunkType == 0) {
+        this->inMsg->getBytes(b.data(), b.size());
+        this->readSeqNum += 3;
+        BigEndian::GetIntValue(b, &h.messageHeader.timestamp);
+        this->inMsg->getBytes(b.data(), b.size());
+        this->readSeqNum += 3;
+        BigEndian::GetIntValue(b, &h.messageHeader.messageLength);
+        uint8_t v = this->inMsg->get();
+        this->readSeqNum++;
+        h.messageHeader.messageTypeID = v;
+        b.clear();
+        b.resize(4);
+        this->inMsg->getBytes(b.data(), b.size());
+        this->readSeqNum += 4;
+        h.messageHeader.messageStreamID = LittleEndian::GetLittleEndianUint32(b.data());
+        if (h.messageHeader.timestamp == 0xffffff) {
+            this->inMsg->getBytes(b.data(), 4);
+            this->readSeqNum += 4;
+            BigEndian::GetIntValue(b, &h.extendTimestamp);
+        }
+        this->tmpBuf->putBytes(b.data(), 4, 0);
+
+    } else if (chunkType == 1) {
+        SPDLOG_ERROR("");
+    } else if (chunkType == 2) {
+        // 执行 chunkType 为 2 的操作
+    } else if (chunkType == 3) {
+        // 执行 chunkType 为 3 的操作
+    } else {
+        // 默认情况下的操作
+    }
+
+}
+
 
 uint32_t RTMPClient::readChunkStreamID(uint32_t csid) {
     uint32_t chunkStreamID = csid;

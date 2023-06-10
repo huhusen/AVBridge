@@ -17,6 +17,22 @@ public:
         }
         return intValue;
     }
+
+    static void GetIntValue(const std::vector<uint8_t> &b, uint32_t *num) {
+        *num = 0;
+        for (size_t i = 0, n = b.size(); i < n; i++) {
+            *num += static_cast<uint32_t>(b[i]) << ((n - i - 1) << 3);
+        }
+    }
+};
+
+class LittleEndian {
+public:
+    static uint32_t GetLittleEndianUint32(const uint8_t *bytes) {
+        uint32_t value;
+        std::memcpy(&value, bytes, sizeof(uint32_t));
+        return value;
+    }
 };
 
 #endif //AVBRIDGE_BIGENDIAN_H
