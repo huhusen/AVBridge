@@ -62,4 +62,4 @@ extern "C" __declspec(dllexport) IPlugin *Install() {
 如果您发现任何问题或有任何建议，请随时向我们提出。我们欢迎社区的贡献者，如果您有兴趣为项目做出贡献，请参阅 CONTRIBUTING.md 文件了解更多信息。
 
 ## 鸣谢
-https://github.com/shank03/HMAC_SHA256
+
