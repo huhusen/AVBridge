@@ -3,6 +3,7 @@
 //
 
 #include "RTMPClient.h"
+#include "Msg.h"
 
 void RTMPClient::Execute(hv::Buffer *buf) {
     this->inMsg->init(buf->data(), buf->size());
@@ -79,10 +80,13 @@ void RTMPClient::readChunk() {
     }
     std::vector<uint8_t> _currentBody(needRead);
     this->inMsg->getBytes(_currentBody.data(), _currentBody.size());
-    currentBody.putBytes(_currentBody.data(),_currentBody.size());
+    currentBody.putBytes(_currentBody.data(), _currentBody.size());
     this->readSeqNum += currentBody.getSize();
     if (currentBody.getPosition() == msgLen) {
-
+        Chunk msg;
+        msg.Header = h;
+        currentBody.getBytes(msg.Body.data(), msgLen);
+        GetRtmpMessage(&msg);
     }
 
 
