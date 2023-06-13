@@ -30,15 +30,7 @@ class Uint32Message : public RtmpMessage {
 public:
     explicit Uint32Message(uint32_t m) : m(m) {}
 
-    std::vector<uint8_t> Encode() override {
-        std::vector<uint8_t> b(4);
-        uint32_t value = static_cast<uint32_t>(m);
-        b[0] = static_cast<uint8_t>((value >> 24) & 0xFF);
-        b[1] = static_cast<uint8_t>((value >> 16) & 0xFF);
-        b[2] = static_cast<uint8_t>((value >> 8) & 0xFF);
-        b[3] = static_cast<uint8_t>(value & 0xFF);
-        return b;
-    }
+    std::vector<uint8_t> Encode() override;
 
 private:
     uint32_t m;
@@ -51,13 +43,7 @@ public:
     UserControlMessage(uint16_t eventType, const std::vector<std::uint8_t> &eventData) : EventType(eventType),
                                                                                          EventData(eventData) {}
 
-    std::vector<uint8_t> Encode() override {
-        std::vector<unsigned char> b;
-        for (size_t i = 0, n = 2; i < n; i++) {
-            b[i] = static_cast<unsigned char>(EventType >> ((n - i - 1) << 3));
-        }
-        return b;
-    }
+    std::vector<uint8_t> Encode() override;
 
 public:
     std::uint16_t EventType;
@@ -71,13 +57,7 @@ public:
     StreamIDMessage(const UserControlMessage &userControlMessage, uint32_t streamId) : userControlMessage(
             userControlMessage), StreamID(streamId) {}
 
-    std::vector<uint8_t> Encode() override {
-        ByteBuffer bf(6);
-        bf.putShort(userControlMessage.EventType);
-        bf.putInt(StreamID);
-        userControlMessage.EventData = bf.getRange(2, bf.getPosition());
-        return bf.getBuffer();
-    }
+    std::vector<uint8_t> Encode() override;
 
 public:
     UserControlMessage userControlMessage;
@@ -91,14 +71,7 @@ public:
     SetBufferMessage(const StreamIDMessage &streamIdMessage, uint32_t millisecond) : streamIdMessage(streamIdMessage),
                                                                                      Millisecond(millisecond) {}
 
-    std::vector<uint8_t> Encode() override {
-        ByteBuffer bf(10);
-        bf.putShort(streamIdMessage.userControlMessage.EventType);
-        bf.putInt(streamIdMessage.StreamID);
-        bf.putInt(Millisecond);
-        streamIdMessage.userControlMessage.EventData = bf.getRange(2, bf.getPosition());
-        return bf.getBuffer();
-    }
+    std::vector<uint8_t> Encode() override;
 
 public:
     StreamIDMessage streamIdMessage;
@@ -112,19 +85,27 @@ public:
     PingRequestMessage(const UserControlMessage &userControlMessage, uint32_t timestamp) : userControlMessage(
             userControlMessage), Timestamp(timestamp) {}
 
-    std::vector<uint8_t> Encode() override {
-        ByteBuffer bf(6);
-        bf.putShort(userControlMessage.EventType);
-        bf.putInt(Timestamp);
-        userControlMessage.EventData = bf.getRange(2, bf.getPosition());
-        return bf.getBuffer();
-    }
+    std::vector<uint8_t> Encode() override;
 
 public:
     UserControlMessage userControlMessage;
     std::uint32_t Timestamp;
 };
 
+class SetPeerBandwidthMessage : public RtmpMessage {
+public:
+    explicit SetPeerBandwidthMessage() {}
+
+
+    SetPeerBandwidthMessage::SetPeerBandwidthMessage(uint32_t acknowledgementWindowsize) : AcknowledgementWindowsize(
+            acknowledgementWindowsize) {}
+
+    std::vector<uint8_t> Encode() override;
+
+public:
+    uint8_t LimitType;
+    std::uint32_t AcknowledgementWindowsize;
+};
 
 static
 void GetRtmpMessage(Chunk *chunk) {
@@ -187,7 +168,15 @@ void GetRtmpMessage(Chunk *chunk) {
             break;
         }
         case RTMP_MSG_BANDWIDTH: {
-
+            if (chunk->Body.size() < 4) {
+                SPDLOG_ERROR("chunk.Body < 4");
+                return;
+            }
+            std::unique_ptr<SetPeerBandwidthMessage> m(new SetPeerBandwidthMessage(body.getInt()));
+            if (body.getSize() > 0) {
+                m->LimitType = body.getBuffer()[0];
+            }
+            chunk->MsgData = std::move(m);
             break;
         }
         case RTMP_MSG_EDGE:
