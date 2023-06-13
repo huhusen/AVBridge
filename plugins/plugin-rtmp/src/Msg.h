@@ -44,7 +44,25 @@ private:
     uint32_t m;
 };
 
+class UserControlMessage : public RtmpMessage {
+public:
+    explicit UserControlMessage() {}
 
+    UserControlMessage(uint16_t eventType, const std::vector<std::uint8_t> &eventData) : EventType(eventType),
+                                                                                         EventData(eventData) {}
+
+    std::vector<uint8_t> Encode() override {
+        std::vector<unsigned char> b;
+        for (size_t i = 0, n = 2; i < n; i++) {
+            b[i] = static_cast<unsigned char>(EventType >> ((n - i - 1) << 3));
+        }
+        return b;
+    }
+
+public:
+    std::uint16_t EventType;
+    std::vector<std::uint8_t> EventData;
+};
 
 
 static
@@ -64,7 +82,28 @@ void GetRtmpMessage(Chunk *chunk) {
             break;
         }
         case RTMP_MSG_USER_CONTROL: {
-
+            if (body.getSize() < 4) {
+                SPDLOG_ERROR("UserControlMessage.Body < 2");
+                return;
+            }
+            UserControlMessage userControlMessage(body.getInt(), body.getBuffer());
+            switch (userControlMessage.EventType) {
+                case RTMP_USER_STREAM_BEGIN:
+                    break;
+                case RTMP_USER_STREAM_EOF:
+                case RTMP_USER_STREAM_DRY:
+                case RTMP_USER_STREAM_IS_RECORDED:
+                    break;
+                case RTMP_USER_SET_BUFFLEN:
+                    break;
+                case RTMP_USER_PING_REQUEST:
+                    break;
+                case RTMP_USER_PING_RESPONSE:
+                case RTMP_USER_EMPTY:
+                    break;
+                default:
+                    break;
+            }
             break;
         }
         case RTMP_MSG_BANDWIDTH: {
