@@ -64,6 +64,67 @@ public:
     std::vector<std::uint8_t> EventData;
 };
 
+class StreamIDMessage : public RtmpMessage {
+public:
+    explicit StreamIDMessage() {}
+
+    StreamIDMessage(const UserControlMessage &userControlMessage, uint32_t streamId) : userControlMessage(
+            userControlMessage), StreamID(streamId) {}
+
+    std::vector<uint8_t> Encode() override {
+        ByteBuffer bf(6);
+        bf.putShort(userControlMessage.EventType);
+        bf.putInt(StreamID);
+        userControlMessage.EventData = bf.getRange(2, bf.getPosition());
+        return bf.getBuffer();
+    }
+
+public:
+    UserControlMessage userControlMessage;
+    std::uint32_t StreamID;
+};
+
+class SetBufferMessage : public RtmpMessage {
+public:
+    explicit SetBufferMessage() {}
+
+    SetBufferMessage(const StreamIDMessage &streamIdMessage, uint32_t millisecond) : streamIdMessage(streamIdMessage),
+                                                                                     Millisecond(millisecond) {}
+
+    std::vector<uint8_t> Encode() override {
+        ByteBuffer bf(10);
+        bf.putShort(streamIdMessage.userControlMessage.EventType);
+        bf.putInt(streamIdMessage.StreamID);
+        bf.putInt(Millisecond);
+        streamIdMessage.userControlMessage.EventData = bf.getRange(2, bf.getPosition());
+        return bf.getBuffer();
+    }
+
+public:
+    StreamIDMessage streamIdMessage;
+    std::uint32_t Millisecond;
+};
+
+class PingRequestMessage : public RtmpMessage {
+public:
+    explicit PingRequestMessage() {}
+
+    PingRequestMessage(const UserControlMessage &userControlMessage, uint32_t timestamp) : userControlMessage(
+            userControlMessage), Timestamp(timestamp) {}
+
+    std::vector<uint8_t> Encode() override {
+        ByteBuffer bf(6);
+        bf.putShort(userControlMessage.EventType);
+        bf.putInt(Timestamp);
+        userControlMessage.EventData = bf.getRange(2, bf.getPosition());
+        return bf.getBuffer();
+    }
+
+public:
+    UserControlMessage userControlMessage;
+    std::uint32_t Timestamp;
+};
+
 
 static
 void GetRtmpMessage(Chunk *chunk) {
@@ -86,22 +147,41 @@ void GetRtmpMessage(Chunk *chunk) {
                 SPDLOG_ERROR("UserControlMessage.Body < 2");
                 return;
             }
-            UserControlMessage userControlMessage(body.getInt(), body.getBuffer());
-            switch (userControlMessage.EventType) {
-                case RTMP_USER_STREAM_BEGIN:
+            UserControlMessage base(body.getInt(), body.getBuffer());
+
+            switch (base.EventType) {
+                case RTMP_USER_STREAM_BEGIN: {
+                    std::unique_ptr<StreamIDMessage> m(new StreamIDMessage(base, 0));
+                    if (base.EventData.size() >= 4) {
+                        m->StreamID = body.getInt();
+                    }
+                    chunk->MsgData = std::move(m);
+                }
                     break;
                 case RTMP_USER_STREAM_EOF:
                 case RTMP_USER_STREAM_DRY:
-                case RTMP_USER_STREAM_IS_RECORDED:
+                case RTMP_USER_STREAM_IS_RECORDED: {
+                    std::unique_ptr<StreamIDMessage> m(new StreamIDMessage(base, body.getInt()));
+                    chunk->MsgData = std::move(m);
+                }
                     break;
-                case RTMP_USER_SET_BUFFLEN:
+                case RTMP_USER_SET_BUFFLEN: {
+                    StreamIDMessage m(base, body.getInt());
+                    std::unique_ptr<SetBufferMessage> s(new SetBufferMessage(m, body.getInt()));
+                    chunk->MsgData = std::move(s);
+                }
                     break;
                 case RTMP_USER_PING_REQUEST:
+
+                    chunk->MsgData = std::move(
+                            std::unique_ptr<PingRequestMessage>(new PingRequestMessage(base, body.getInt())));
                     break;
                 case RTMP_USER_PING_RESPONSE:
                 case RTMP_USER_EMPTY:
+                    chunk->MsgData = std::unique_ptr<UserControlMessage>(&base);
                     break;
                 default:
+                    chunk->MsgData = std::unique_ptr<UserControlMessage>(&base);
                     break;
             }
             break;
